@@ -1,0 +1,10 @@
+chatbot/.env
+chatbot/venv/
+chatbot/__pycache__/
+cms/.env
+cms/venv/
+cms/__pycache__/
+cms/cms.db
+*.pyc
+*.log
+node_modules/

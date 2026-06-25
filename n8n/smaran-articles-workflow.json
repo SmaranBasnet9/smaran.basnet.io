@@ -1,0 +1,313 @@
+{
+  "name": "Smaran Daily AI Articles → Sanity Drafts",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "0 8,16 * * *" }
+          ]
+        }
+      },
+      "id": "trigger-cron",
+      "name": "Twice Daily",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.OPENAI_API_KEY }}" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"gpt-4o-mini\",\n  max_tokens: 300,\n  response_format: { type: \"json_object\" },\n  messages: [{\n    role: \"system\",\n    content: \"You are a topic scout for a Gen-Z-focused AI tools/news site. Propose ONE narrow, specific article topic about an AI tool, feature, or trend that a curious 18-26 year old would actually want to read about today. Avoid generic 'AI is changing everything' topics. Avoid repeating obvious, overdone topics (e.g. another generic ChatGPT explainer). Output strict JSON only: {\\\"topic\\\":string, \\\"angle\\\":string, \\\"primaryKeyword\\\":string}.\"\n  }, {\n    role: \"user\",\n    content: \"Today's date: \" + new Date().toISOString().slice(0,10) + \". Propose today's topic.\"\n  }]\n}) }}"
+      },
+      "id": "topic-agent",
+      "name": "Topic Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content;\nlet parsed;\ntry { parsed = JSON.parse(raw); } catch (e) { parsed = null; }\nreturn [{ json: { ok: !!(parsed && parsed.topic && parsed.angle && parsed.primaryKeyword), topic: parsed } }];"
+      },
+      "id": "parse-topic",
+      "name": "Parse Topic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "check-topic-ok",
+      "name": "Topic OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [660, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.OPENAI_API_KEY }}" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"gpt-4o\",\n  max_tokens: 2200,\n  response_format: { type: \"json_object\" },\n  messages: [{\n    role: \"system\",\n    content: $env.ARTICLE_VOICE_SYSTEM_PROMPT\n  }, {\n    role: \"user\",\n    content: \"Write the article. Topic: \" + $json.topic.topic + \". Angle: \" + $json.topic.angle + \". Primary keyword to weave in naturally: \" + $json.topic.primaryKeyword\n  }]\n}) }}"
+      },
+      "id": "writer-agent",
+      "name": "Writer Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, -80]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content;\nlet parsed;\ntry { parsed = JSON.parse(raw); } catch (e) { parsed = null; }\nconst ok = !!(parsed && parsed.title && parsed.excerpt && parsed.bodyMarkdown && parsed.category);\nreturn [{ json: { ok, article: parsed, primaryKeyword: $('Parse Topic').item.json.topic.primaryKeyword } }];"
+      },
+      "id": "parse-article",
+      "name": "Parse Article",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, -80]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "check-article-ok",
+      "name": "Article OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1320, -80]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.OPENAI_API_KEY }}" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"gpt-4o-mini\",\n  max_tokens: 400,\n  response_format: { type: \"json_object\" },\n  messages: [{\n    role: \"system\",\n    content: \"You are an SEO specialist. Given an article title, excerpt, and body, produce an SEO title (<=60 chars), SEO description (<=160 chars), and 4-8 lowercase tags optimized for the given primary keyword and general AI-tools search intent. Output strict JSON only: {\\\"seoTitle\\\":string, \\\"seoDescription\\\":string, \\\"tags\\\":[string]}.\"\n  }, {\n    role: \"user\",\n    content: \"Primary keyword: \" + $json.primaryKeyword + \"\\nTitle: \" + $json.article.title + \"\\nExcerpt: \" + $json.article.excerpt + \"\\nBody:\\n\" + $json.article.bodyMarkdown\n  }]\n}) }}"
+      },
+      "id": "seo-agent",
+      "name": "SEO Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, -160]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content;\nlet parsed;\ntry { parsed = JSON.parse(raw); } catch (e) { parsed = null; }\nconst ok = !!(parsed && parsed.seoTitle && parsed.seoDescription && Array.isArray(parsed.tags));\nreturn [{ json: { ok, seo: parsed } }];"
+      },
+      "id": "parse-seo",
+      "name": "Parse SEO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, -160]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "check-seo-ok",
+      "name": "SEO OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1980, -160]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/images/generations",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.OPENAI_API_KEY }}" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"gpt-image-1\",\n  prompt: \"Editorial cover illustration for a tech article titled '\" + $('Parse Article').item.json.article.title + \"'. Modern, clean, flat-design tech illustration style, no text, no logos, vibrant but professional color palette.\",\n  size: \"1536x1024\"\n}) }}"
+      },
+      "id": "image-agent",
+      "name": "Image Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, -160]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Converts simple markdown (## / ### headings, blank-line paragraphs, '- ' bullets) into\n// Sanity Portable Text blocks matching the shape used by article.body.\nconst md = $('Parse Article').item.json.article.bodyMarkdown;\nconst lines = md.split('\\n');\nconst blocks = [];\nfunction key() { return Math.random().toString(36).slice(2, 10); }\nfunction textSpan(text) { return [{ _type: 'span', _key: key(), text, marks: [] }]; }\n\nlet bulletBuffer = [];\nfunction flushBullets() {\n  for (const b of bulletBuffer) {\n    blocks.push({ _type: 'block', _key: key(), style: 'normal', listItem: 'bullet', level: 1, children: textSpan(b) });\n  }\n  bulletBuffer = [];\n}\n\nfor (const rawLine of lines) {\n  const line = rawLine.trim();\n  if (!line) { flushBullets(); continue; }\n  if (line.startsWith('### ')) { flushBullets(); blocks.push({ _type: 'block', _key: key(), style: 'h3', children: textSpan(line.slice(4)) }); continue; }\n  if (line.startsWith('## ')) { flushBullets(); blocks.push({ _type: 'block', _key: key(), style: 'h2', children: textSpan(line.slice(3)) }); continue; }\n  if (line.startsWith('- ') || line.startsWith('* ')) { bulletBuffer.push(line.slice(2)); continue; }\n  flushBullets();\n  blocks.push({ _type: 'block', _key: key(), style: 'normal', children: textSpan(line) });\n}\nflushBullets();\n\nfunction slugify(s) {\n  return s.toLowerCase().trim().replace(/[^a-z0-9\\s-]/g, '').replace(/\\s+/g, '-').replace(/-+/g, '-').slice(0, 90);\n}\n\nreturn [{ json: { bodyBlocks: blocks, slug: slugify($('Parse Article').item.json.article.title) } }];"
+      },
+      "id": "markdown-to-portable-text",
+      "name": "Markdown → Portable Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2420, -80]
+    },
+    {
+      "parameters": { "numberInputs": 2 },
+      "id": "merge-before-upload",
+      "name": "Merge (image + body)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [2640, -120]
+    },
+    {
+      "parameters": {
+        "jsCode": "const imgB64 = $('Image Agent').item.json.data[0].b64_json;\nconst buffer = Buffer.from(imgB64, 'base64');\nreturn [{\n  json: {},\n  binary: { image: { data: imgB64, mimeType: 'image/png', fileName: 'cover.png' } }\n}];"
+      },
+      "id": "decode-image",
+      "name": "Decode Image",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2860, -120]
+    },
+    {
+      "parameters": {
+        "url": "=https://{{ $env.SANITY_PROJECT_ID }}.api.sanity.io/v{{ $env.SANITY_API_VERSION }}/assets/images/{{ $env.SANITY_DATASET }}",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.SANITY_API_TOKEN }}" },
+            { "name": "content-type", "value": "image/png" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "image"
+      },
+      "id": "upload-image-sanity",
+      "name": "Upload Image to Sanity",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3080, -120]
+    },
+    {
+      "parameters": {
+        "url": "=https://{{ $env.SANITY_PROJECT_ID }}.api.sanity.io/v{{ $env.SANITY_API_VERSION }}/data/query/{{ $env.SANITY_DATASET }}",
+        "method": "GET",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "query", "value": "=*[_type == \"category\" && title match \"{{ $('Parse Article').item.json.article.category }}*\"][0]{_id}" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.SANITY_API_TOKEN }}" }
+          ]
+        }
+      },
+      "id": "lookup-category",
+      "name": "Lookup Category",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3080, 40]
+    },
+    {
+      "parameters": { "numberInputs": 2 },
+      "id": "merge-before-create",
+      "name": "Merge (asset + category)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [3300, -40]
+    },
+    {
+      "parameters": {
+        "url": "=https://{{ $env.SANITY_PROJECT_ID }}.api.sanity.io/v{{ $env.SANITY_API_VERSION }}/data/mutate/{{ $env.SANITY_DATASET }}",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.SANITY_API_TOKEN }}" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  mutations: [{\n    create: {\n      _type: 'article',\n      title: $('Parse Article').item.json.article.title,\n      slug: { _type: 'slug', current: $('Markdown → Portable Text').item.json.slug },\n      excerpt: $('Parse Article').item.json.article.excerpt,\n      category: $('Lookup Category').item.json.result\n        ? { _type: 'reference', _ref: $('Lookup Category').item.json.result._id }\n        : undefined,\n      coverImage: {\n        _type: 'image',\n        asset: { _type: 'reference', _ref: $('Upload Image to Sanity').item.json.document._id }\n      },\n      body: $('Markdown → Portable Text').item.json.bodyBlocks,\n      seoTitle: $('Parse SEO').item.json.seo.seoTitle,\n      seoDescription: $('Parse SEO').item.json.seo.seoDescription,\n      tags: $('Parse SEO').item.json.seo.tags,\n      status: 'draft',\n      featured: false,\n      publishedAt: new Date().toISOString()\n    }\n  }]\n}) }}"
+      },
+      "id": "create-draft-article",
+      "name": "Create Draft Article",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3520, -40]
+    }
+  ],
+  "connections": {
+    "Twice Daily": { "main": [[{ "node": "Topic Agent", "type": "main", "index": 0 }]] },
+    "Topic Agent": { "main": [[{ "node": "Parse Topic", "type": "main", "index": 0 }]] },
+    "Parse Topic": { "main": [[{ "node": "Topic OK?", "type": "main", "index": 0 }]] },
+    "Topic OK?": { "main": [[{ "node": "Writer Agent", "type": "main", "index": 0 }], []] },
+    "Writer Agent": { "main": [[{ "node": "Parse Article", "type": "main", "index": 0 }]] },
+    "Parse Article": { "main": [[{ "node": "Article OK?", "type": "main", "index": 0 }]] },
+    "Article OK?": { "main": [[{ "node": "SEO Agent", "type": "main", "index": 0 }, { "node": "Markdown → Portable Text", "type": "main", "index": 0 }, { "node": "Lookup Category", "type": "main", "index": 0 }], []] },
+    "SEO Agent": { "main": [[{ "node": "Parse SEO", "type": "main", "index": 0 }]] },
+    "Parse SEO": { "main": [[{ "node": "SEO OK?", "type": "main", "index": 0 }]] },
+    "SEO OK?": { "main": [[{ "node": "Image Agent", "type": "main", "index": 0 }], []] },
+    "Image Agent": { "main": [[{ "node": "Merge (image + body)", "type": "main", "index": 0 }]] },
+    "Markdown → Portable Text": { "main": [[{ "node": "Merge (image + body)", "type": "main", "index": 1 }]] },
+    "Merge (image + body)": { "main": [[{ "node": "Decode Image", "type": "main", "index": 0 }]] },
+    "Decode Image": { "main": [[{ "node": "Upload Image to Sanity", "type": "main", "index": 0 }]] },
+    "Upload Image to Sanity": { "main": [[{ "node": "Merge (asset + category)", "type": "main", "index": 0 }]] },
+    "Lookup Category": { "main": [[{ "node": "Merge (asset + category)", "type": "main", "index": 1 }]] },
+    "Merge (asset + category)": { "main": [[{ "node": "Create Draft Article", "type": "main", "index": 0 }]] }
+  }
+}

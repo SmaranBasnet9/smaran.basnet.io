@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Personalization in Customer Journeys: What Works | Smaran Basnet</title>
+    <meta name="description"
+        content="How AI-driven personalization is actually used across the customer journey, where it improves results, and where it can feel intrusive instead of helpful.">
+    <meta name="theme-color" content="#131110">
+
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://smaranbasnet.com.np/blog/ai-personalization-customer-journeys.html">
+    <meta property="og:title" content="AI Personalization in Customer Journeys: What Works | Smaran Basnet">
+    <meta property="og:description"
+        content="How AI-driven personalization is actually used across the customer journey, where it improves results, and where it can feel intrusive instead of helpful.">
+    <meta property="og:image" content="../images/image.png">
+
+    <link rel="shortcut icon" href="../images/image.png" type="image/x-icon">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "AI Personalization in Customer Journeys: What Works",
+      "description": "How AI-driven personalization is actually used across the customer journey, where it improves results, and where it can feel intrusive instead of helpful.",
+      "author": {
+        "@type": "Person",
+        "name": "Smaran Basnet"
+      },
+      "datePublished": "2026-06-23"
+    }
+    </script>
+</head>
+
+<body data-theme="dark" class="mag-page">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle color theme" type="button">
+        <i class='bx bx-sun sun-icon'></i>
+        <i class='bx bx-moon moon-icon'></i>
+    </button>
+
+    <header class="header" id="header">
+        <a href="../index.html" class="logo">Sma<span>ran</span></a>
+        <nav class="navbar" id="primary-navigation" aria-label="Primary">
+            <a href="../index.html" class="nav-link">Home</a>
+            <a href="../blog.html" class="nav-link active">Blog</a>
+            <a href="../contact.html" class="nav-link">Contact</a>
+        </nav>
+        <button class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-expanded="false"
+            aria-controls="primary-navigation" type="button">
+            <i class='bx bx-menu'></i>
+        </button>
+    </header>
+
+    <main id="main-content">
+        <article>
+            <header class="mag-article-header">
+                <p class="mag-breadcrumb"><a href="../blog.html">Blog</a> / AI Personalization</p>
+                <span class="subtitle">AI &amp; Customer Experience</span>
+                <h1>AI Personalization in Customer Journeys: What Works</h1>
+                <div class="article-meta">
+                    <span><i class='bx bx-time'></i> 7 min read</span>
+                    <span><i class='bx bx-calendar'></i> June 2026</span>
+                    <span><i class='bx bx-user'></i> Smaran Basnet</span>
+                </div>
+            </header>
+
+            <div class="mag-article-image" style="--mag-image-gradient: linear-gradient(135deg, #db2777 0%, #7c3aed 100%);">
+                <div class="mag-article-image-inner">
+                    <i class='bx bx-user-pin'></i>
+                </div>
+            </div>
+
+            <section class="mag-article-body">
+                <div class="mag-article-content">
+                        <p>Personalization used to mean inserting someone's first name into an email subject line.
+                            AI has made it possible to personalize far more &mdash; product recommendations, send
+                            timing, on-site content, and offers &mdash; based on actual behavior rather than static
+                            segments. Done well, this makes the customer journey feel more relevant. Done poorly, it
+                            feels like being watched, which damages trust faster than generic messaging ever would.</p>
+
+                        <h2>Where AI Personalization Genuinely Improves the Journey</h2>
+                        <ul>
+                            <li><strong>Product recommendations</strong> &mdash; suggesting items based on actual
+                                browsing and purchase behavior rather than fixed categories</li>
+                            <li><strong>Send-time optimization</strong> &mdash; emailing each contact when they
+                                historically engage, instead of one blanket send time for the whole list</li>
+                            <li><strong>Dynamic on-site content</strong> &mdash; showing returning visitors content
+                                relevant to what they previously viewed, rather than a generic homepage</li>
+                            <li><strong>Lifecycle-stage messaging</strong> &mdash; adjusting tone and offer based on
+                                whether someone is a first-time visitor, repeat browser, or existing customer</li>
+                        </ul>
+                        <p>These work because they're based on a person's own behavior, applied back to their own
+                            experience. The personalization feels earned rather than guessed.</p>
+
+                        <h2>Where Personalization Starts to Feel Intrusive</h2>
+                        <p>The line gets crossed when personalization reveals more tracking than a customer expected,
+                            or when it's used to manufacture urgency rather than relevance. A few patterns that
+                            backfire:</p>
+                        <ul>
+                            <li>Referencing specific browsing detail in a way that feels like surveillance rather than
+                                helpfulness ("we noticed you looked at this 3 times")</li>
+                            <li>Fake scarcity or urgency generated by an algorithm rather than reflecting real
+                                inventory or demand</li>
+                            <li>Personalization that's technically accurate but contextually wrong &mdash; recommending
+                                a product someone already bought, or re-targeting after a completed purchase</li>
+                        </ul>
+                        <p>The test worth applying before launching any personalized experience: would a customer feel
+                            understood by this, or would they feel tracked? Those are different reactions, and AI
+                            systems don't inherently know the difference &mdash; that judgment has to be built in by
+                            the team deploying them.</p>
+
+                        <h2>The Data Foundation Personalization Actually Needs</h2>
+                        <p>Personalization is only as good as the behavioral data feeding it. Before investing in
+                            more advanced personalization tooling, it's worth confirming:</p>
+                        <ul>
+                            <li>Customer data is unified across channels, not siloed between email, site, and ads</li>
+                            <li>Behavioral signals used for personalization are recent enough to be relevant</li>
+                            <li>There's a clear policy on what data is used for personalization and what isn't,
+                                particularly anything sensitive</li>
+                        </ul>
+
+                        <h2>Starting Small With Personalization</h2>
+                        <p>Businesses don't need a full personalization engine to see results. A reasonable starting
+                            sequence:</p>
+                        <ul>
+                            <li>Segment email sends by lifecycle stage before attempting 1:1 personalization</li>
+                            <li>Personalize one high-traffic page (often the homepage for returning visitors) before
+                                personalizing the whole site</li>
+                            <li>Test personalized vs. generic versions directly against each other rather than
+                                assuming personalization automatically wins</li>
+                        </ul>
+
+                        <h2>The Takeaway</h2>
+                        <p>AI personalization works best when it makes a customer's experience feel more relevant
+                            using data they'd reasonably expect a business to have. It backfires when it's used to
+                            manufacture pressure or reveals more tracking than feels comfortable. The goal isn't
+                            maximum personalization &mdash; it's personalization that holds up to the question of
+                            whether a customer would actually appreciate it.</p>
+
+                        <div class="mag-cta">
+                            <h3>Thinking about personalizing your customer journey?</h3>
+                            <p>Let's look at where personalization would genuinely improve your funnel &mdash; and
+                                where it would just feel invasive.</p>
+                            <a href="../contact.html" class="btn btn-primary">Request a Strategy Call</a>
+                        </div>
+                    </div>
+            </section>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-about">
+                <h4><a href="../about.html">About</a></h4>
+                <p>Notes and practical insights on AI in digital marketing, SEO, paid media, and analytics
+                    &mdash; written for businesses that want decisions, not buzzwords.</p>
+            </div>
+            <nav class="footer-nav" aria-label="Footer">
+                <a href="../index.html">Home</a>
+                <a href="../blog.html">Blog</a>
+                <a href="../about.html">About</a>
+                <a href="../contact.html">Contact</a>
+            </nav>
+        </div>
+        <p class="footer-copy">&copy; 2026 Smaran Basnet. All Rights Reserved.</p>
+    </footer>
+
+    <script src="../script.js"></script>
+</body>
+
+</html>

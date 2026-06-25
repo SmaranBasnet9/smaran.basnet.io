@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing AI Assistant | Smaran Basnet</title>
+    <meta name="description"
+        content="Chat with Mara, an AI assistant that explains the AI tools and technologies marketers actually use — copywriting, ad automation, personalization, analytics, and more.">
+    <meta name="theme-color" content="#131110">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://smaranbasnet.com.np/blog/ai-marketing-assistant.html">
+    <meta property="og:title" content="Marketing AI Assistant | Smaran Basnet">
+    <meta property="og:description"
+        content="Chat with Mara, an AI assistant that explains the AI tools and technologies marketers actually use.">
+    <meta property="og:image" content="../images/image.png">
+
+    <link rel="shortcut icon" href="../images/image.png" type="image/x-icon">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+
+<body data-theme="dark" class="mag-page">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle color theme" type="button">
+        <i class='bx bx-sun sun-icon'></i>
+        <i class='bx bx-moon moon-icon'></i>
+    </button>
+
+    <header class="header" id="header">
+        <a href="../index.html" class="logo">Sma<span>ran</span></a>
+        <nav class="navbar" id="primary-navigation" aria-label="Primary">
+            <a href="../index.html" class="nav-link">Home</a>
+            <a href="../blog.html" class="nav-link active">Blog</a>
+            <a href="../contact.html" class="nav-link">Contact</a>
+        </nav>
+        <button class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-expanded="false"
+            aria-controls="primary-navigation" type="button">
+            <i class='bx bx-menu'></i>
+        </button>
+    </header>
+
+    <main id="main-content">
+        <header class="mag-article-header">
+            <p class="mag-breadcrumb"><a href="../blog.html">Blog</a> / Marketing AI Assistant</p>
+            <span class="subtitle">AI &amp; Marketing Tools</span>
+            <h1>Marketing AI Assistant</h1>
+            <p>Ask Mara about the AI tools and technologies marketers are actually using &mdash; copywriting,
+                ad bidding automation, personalization, analytics, SEO, and AI agents.</p>
+        </header>
+
+        <section class="chat-section">
+            <div class="chat-shell glass-card">
+                <div class="chat-header">
+                    <div class="chat-header-identity">
+                        <span class="chat-avatar"><i class='bx bx-bot'></i></span>
+                        <div>
+                            <p class="chat-name">Mara</p>
+                            <p class="chat-status"><span class="chat-status-dot"></span> AI marketing tools
+                                assistant</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-log" id="chatLog" aria-live="polite">
+                    <div class="chat-msg chat-msg-bot">
+                        <p>Hi, I'm Mara. Ask me about AI tools for marketing &mdash; copywriting, ad automation,
+                            personalization, analytics, SEO, or AI agents &mdash; and I'll walk you through what
+                            they actually do.</p>
+                    </div>
+                </div>
+
+                <p class="chat-error" id="chatError" hidden></p>
+
+                <form class="chat-input-row" id="chatForm">
+                    <input type="text" id="chatInput" placeholder="Ask about an AI marketing tool..."
+                        autocomplete="off" aria-label="Message" required>
+                    <button type="submit" class="btn btn-primary" id="chatSend">
+                        <i class='bx bx-send'></i>
+                    </button>
+                </form>
+
+                <p class="chat-disclaimer">Mara runs on a local assistant server and is for informational
+                    purposes &mdash; for a tailored strategy, <a href="../contact.html">get in touch</a>.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-about">
+                <h4><a href="../about.html">About</a></h4>
+                <p>Notes and practical insights on AI in digital marketing, SEO, paid media, and analytics
+                    &mdash; written for businesses that want decisions, not buzzwords.</p>
+            </div>
+            <nav class="footer-nav" aria-label="Footer">
+                <a href="../index.html">Home</a>
+                <a href="../blog.html">Blog</a>
+                <a href="../about.html">About</a>
+                <a href="../contact.html">Contact</a>
+            </nav>
+        </div>
+        <p class="footer-copy">&copy; 2026 Smaran Basnet. All Rights Reserved.</p>
+    </footer>
+
+    <script src="../script.js"></script>
+    <script src="../chatbot/chat-widget.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,316 @@
+{
+  "name": "Smaran Daily AI News → GitHub PR",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "0 10,19 * * *" }
+          ]
+        }
+      },
+      "id": "trigger-cron",
+      "name": "Twice Daily",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://newsdata.io/api/1/news",
+        "method": "GET",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.NEWSDATA_API_KEY }}" },
+            { "name": "q", "value": "AI OR \"artificial intelligence\" OR \"AI policy\" OR \"AI regulation\" OR smartphone OR chip OR hardware" },
+            { "name": "category", "value": "technology" },
+            { "name": "language", "value": "en" }
+          ]
+        }
+      },
+      "id": "fetch-news",
+      "name": "Fetch News (NewsData.io)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.first().json.results || [];\nconst topics = /ai\\b|artificial intelligence|model|chip|smartphone|hardware|gpt|llm|regulation|policy/i;\nconst filtered = results.filter(r => topics.test((r.title || '') + ' ' + (r.description || '')));\nreturn filtered.slice(0, 10).map(r => ({ json: {\n  title: r.title,\n  description: r.description || '',\n  link: r.link,\n  source: r.source_id,\n  image_url: r.image_url || ''\n}}));"
+      },
+      "id": "filter-topics",
+      "name": "Filter to AI/Policy/Hardware",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map(i => i.json);\nreturn [{ json: { candidates: items } }];"
+      },
+      "id": "collect-candidates",
+      "name": "Collect Candidates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.OPENAI_API_KEY }}" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"gpt-4o-mini\",\n  max_tokens: 500,\n  response_format: { type: \"json_object\" },\n  messages: [{\n    role: \"user\",\n    content: \"You are picking today's single most newsworthy AI/AI-policy/hardware story from this list for a daily tech news section. Reject anything not about AI models, AI policy/regulation, or AI-relevant hardware (phones, chips, devices). Return strict JSON only: {\\\"title\\\":...,\\\"description\\\":...,\\\"link\\\":...,\\\"source\\\":...,\\\"image_url\\\":...} picking exactly one item verbatim from the list below, or {\\\"skip\\\":true} if none qualify.\\n\\n\" + JSON.stringify($json.candidates)\n  }]\n}) }}"
+      },
+      "id": "decide-story",
+      "name": "Decide — Claude picks the story",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ JSON.parse($json.choices[0].message.content).skip }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "notEquals" }
+            }
+          ]
+        }
+      },
+      "id": "check-not-skipped",
+      "name": "Story chosen?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1100, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.OPENAI_API_KEY }}" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"gpt-4o-mini\",\n  max_tokens: 600,\n  response_format: { type: \"json_object\" },\n  messages: [{\n    role: \"system\",\n    content: $env.SMARAN_VOICE_SYSTEM_PROMPT\n  }, {\n    role: \"user\",\n    content: \"Rewrite this raw news item per the rules. Raw item: \" + JSON.stringify(JSON.parse($('Decide — Claude picks the story').item.json.choices[0].message.content))\n  }]\n}) }}"
+      },
+      "id": "rewrite-smaran-voice",
+      "name": "Rewrite — Smaran voice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, -80]
+    },
+    {
+      "parameters": {
+        "jsCode": "const card = JSON.parse($json.choices[0].message.content);\nfunction esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;');}\nconst tpl = `                <article class=\"news-card\">\n                    <img class=\"news-card-image\" src=\"${card.image_url || 'images/image.png'}\" alt=\"${esc(card.title)}\" loading=\"lazy\">\n                    <div class=\"news-card-body\">\n                        <h3>${esc(card.title)}</h3>\n                        <p class=\"news-excerpt\">${esc(card.excerpt)}</p>\n                        <div class=\"news-meta\">\n                            <span>Story via <a href=\"${card.source_url}\" target=\"_blank\" rel=\"noopener\">${esc(card.source_name)}</a></span>\n                            <span>Summarized by Smaran</span>\n                        </div>\n                    </div>\n                </article>\n`;\nreturn [{ json: { card, cardHtml: tpl } }];"
+      },
+      "id": "render-card",
+      "name": "Render news-card HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, -80]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $env.GITHUB_REPO }}/contents/blog.html",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.GITHUB_TOKEN }}" },
+            { "name": "Accept", "value": "application/vnd.github+json" }
+          ]
+        }
+      },
+      "id": "get-blog-html",
+      "name": "GitHub: get blog.html",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, -160]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $env.GITHUB_REPO }}/contents/index.html",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.GITHUB_TOKEN }}" },
+            { "name": "Accept", "value": "application/vnd.github+json" }
+          ]
+        }
+      },
+      "id": "get-index-html",
+      "name": "GitHub: get index.html",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 0]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $env.GITHUB_REPO }}/git/refs/heads/main",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.GITHUB_TOKEN }}" },
+            { "name": "Accept", "value": "application/vnd.github+json" }
+          ]
+        }
+      },
+      "id": "get-main-ref",
+      "name": "GitHub: get main ref",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 160]
+    },
+    {
+      "parameters": {
+        "jsCode": "const blog = $('GitHub: get blog.html').item.json;\nconst index = $('GitHub: get index.html').item.json;\nconst mainRef = $('GitHub: get main ref').item.json;\nconst cardHtml = $('Render news-card HTML').item.json.cardHtml;\nconst HOME_TEASER_LIMIT = 4;\n\nfunction decode(b64) { return Buffer.from(b64, 'base64').toString('utf-8'); }\n\n// blog.html no longer carries a news section (news now lives only on the\n// homepage as a scrolling feed) — left unchanged, but its sha is still\n// needed so the PR diff for index.html applies cleanly against the same branch.\nfunction insertIntoIndex(html) {\n  const sectionMarker = '<section class=\"news-section\" id=\"latest-ai-news\">';\n  const sectionStart = html.indexOf(sectionMarker);\n  if (sectionStart === -1) throw new Error('latest-ai-news section not found in index.html');\n  const gridMarker = '<div class=\"news-grid news-feed\">';\n  const gridIdx = html.indexOf(gridMarker, sectionStart);\n  const insertAt = gridIdx + gridMarker.length;\n  let updated = html.slice(0, insertAt) + '\\n' + cardHtml + html.slice(insertAt);\n\n  const gridIdx2 = updated.indexOf(gridMarker, sectionStart);\n  const gridClose = updated.indexOf('</div>', gridIdx2);\n  const gridInner = updated.slice(gridIdx2 + gridMarker.length, gridClose);\n  const articleRe = /<article class=\"news-card\">[\\s\\S]*?<\\/article>\\s*/g;\n  const articles = gridInner.match(articleRe) || [];\n  if (articles.length > HOME_TEASER_LIMIT) {\n    const trimmed = '\\n' + articles.slice(0, HOME_TEASER_LIMIT).join('');\n    updated = updated.slice(0, gridIdx2 + gridMarker.length) + trimmed + updated.slice(gridClose);\n  }\n  return updated;\n}\n\nconst blogHtml = decode(blog.content);\nconst indexHtml = decode(index.content);\nconst newIndexHtml = insertIntoIndex(indexHtml);\n\nreturn [{ json: {\n  baseSha: mainRef.object.sha,\n  blogSha: blog.sha,\n  indexSha: index.sha,\n  blogContentB64: Buffer.from(blogHtml, 'utf-8').toString('base64'),\n  indexContentB64: Buffer.from(newIndexHtml, 'utf-8').toString('base64'),\n  branchName: 'ai-news/' + new Date().toISOString().slice(0,10) + '-' + Math.random().toString(36).slice(2,7)\n}}];"
+      },
+      "id": "compute-updated-html",
+      "name": "Compute updated HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 0]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $env.GITHUB_REPO }}/git/refs",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.GITHUB_TOKEN }}" },
+            { "name": "Accept", "value": "application/vnd.github+json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ref: 'refs/heads/' + $json.branchName, sha: $json.baseSha }) }}"
+      },
+      "id": "create-branch",
+      "name": "GitHub: create branch",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 0]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $env.GITHUB_REPO }}/contents/blog.html",
+        "method": "PUT",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.GITHUB_TOKEN }}" },
+            { "name": "Accept", "value": "application/vnd.github+json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ message: 'AI news: ' + JSON.parse($('Decide — Claude picks the story').item.json.choices[0].message.content).title, content: $('Compute updated HTML').item.json.blogContentB64, sha: $('Compute updated HTML').item.json.blogSha, branch: $('Compute updated HTML').item.json.branchName }) }}"
+      },
+      "id": "update-blog-html",
+      "name": "GitHub: update blog.html",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2420, -80]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $env.GITHUB_REPO }}/contents/index.html",
+        "method": "PUT",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.GITHUB_TOKEN }}" },
+            { "name": "Accept", "value": "application/vnd.github+json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ message: 'AI news teaser: ' + JSON.parse($('Decide — Claude picks the story').item.json.choices[0].message.content).title, content: $('Compute updated HTML').item.json.indexContentB64, sha: $('Compute updated HTML').item.json.indexSha, branch: $('Compute updated HTML').item.json.branchName }) }}"
+      },
+      "id": "update-index-html",
+      "name": "GitHub: update index.html",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2420, 80]
+    },
+    {
+      "parameters": { "numberInputs": 2 },
+      "id": "merge-before-pr",
+      "name": "Merge (wait for both file updates)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [2540, 0]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $env.GITHUB_REPO }}/pulls",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.GITHUB_TOKEN }}" },
+            { "name": "Accept", "value": "application/vnd.github+json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  title: 'Daily AI news: ' + $('Render news-card HTML').item.json.card.title,\n  head: $('Compute updated HTML').item.json.branchName,\n  base: 'main',\n  body: 'Auto-drafted by the n8n news pipeline. Source: ' + $('Render news-card HTML').item.json.card.source_url + '\\n\\nReview the rewritten excerpt below, edit inline on GitHub if needed, then merge to publish:\\n\\n> ' + $('Render news-card HTML').item.json.card.excerpt\n}) }}"
+      },
+      "id": "open-pr",
+      "name": "GitHub: open PR (request Smaran to publish)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2640, 0]
+    }
+  ],
+  "connections": {
+    "Twice Daily": { "main": [[{ "node": "Fetch News (NewsData.io)", "type": "main", "index": 0 }]] },
+    "Fetch News (NewsData.io)": { "main": [[{ "node": "Filter to AI/Policy/Hardware", "type": "main", "index": 0 }]] },
+    "Filter to AI/Policy/Hardware": { "main": [[{ "node": "Collect Candidates", "type": "main", "index": 0 }]] },
+    "Collect Candidates": { "main": [[{ "node": "Decide — Claude picks the story", "type": "main", "index": 0 }]] },
+    "Decide — Claude picks the story": { "main": [[{ "node": "Story chosen?", "type": "main", "index": 0 }]] },
+    "Story chosen?": { "main": [[{ "node": "Rewrite — Smaran voice", "type": "main", "index": 0 }], []] },
+    "Rewrite — Smaran voice": { "main": [[{ "node": "Render news-card HTML", "type": "main", "index": 0 }]] },
+    "Render news-card HTML": {
+      "main": [[
+        { "node": "GitHub: get blog.html", "type": "main", "index": 0 },
+        { "node": "GitHub: get index.html", "type": "main", "index": 0 },
+        { "node": "GitHub: get main ref", "type": "main", "index": 0 }
+      ]]
+    },
+    "GitHub: get blog.html": { "main": [[{ "node": "Compute updated HTML", "type": "main", "index": 0 }]] },
+    "GitHub: get index.html": { "main": [[{ "node": "Compute updated HTML", "type": "main", "index": 0 }]] },
+    "GitHub: get main ref": { "main": [[{ "node": "Compute updated HTML", "type": "main", "index": 0 }]] },
+    "Compute updated HTML": { "main": [[{ "node": "GitHub: create branch", "type": "main", "index": 0 }]] },
+    "GitHub: create branch": {
+      "main": [[
+        { "node": "GitHub: update blog.html", "type": "main", "index": 0 },
+        { "node": "GitHub: update index.html", "type": "main", "index": 0 }
+      ]]
+    },
+    "GitHub: update blog.html": { "main": [[{ "node": "Merge (wait for both file updates)", "type": "main", "index": 0 }]] },
+    "GitHub: update index.html": { "main": [[{ "node": "Merge (wait for both file updates)", "type": "main", "index": 1 }]] },
+    "Merge (wait for both file updates)": { "main": [[{ "node": "GitHub: open PR (request Smaran to publish)", "type": "main", "index": 0 }]] }
+  }
+}

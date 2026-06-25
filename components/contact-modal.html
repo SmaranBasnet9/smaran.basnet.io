@@ -1,0 +1,26 @@
+<div class="modal-overlay" id="contactModalOverlay" hidden>
+    <div class="modal-box glass-card" role="dialog" aria-modal="true" aria-labelledby="contactModalTitle">
+        <button type="button" class="modal-close" id="closeContactModal" aria-label="Close contact form">
+            <i class='bx bx-x'></i>
+        </button>
+        <h3 id="contactModalTitle">Send a Quick Message</h3>
+        <p class="modal-subtitle">Share a question, article idea, or project context. For more detail, use the <a href="contact.html">Contact page</a> instead.</p>
+        <form id="miniContactForm">
+            <div class="form-group">
+                <label for="miniContactName">Your Name</label>
+                <input id="miniContactName" name="name" type="text" autocomplete="name" required>
+            </div>
+            <div class="form-group">
+                <label for="miniContactGoal">Topic or Objective</label>
+                <input id="miniContactGoal" name="goal" type="text" placeholder="AI marketing, SEO, content idea, collaboration" required>
+            </div>
+            <div class="form-group">
+                <label for="miniContactMessage">Message</label>
+                <textarea id="miniContactMessage" name="message" rows="4" placeholder="A brief outline of your question, idea, or business context." required></textarea>
+            </div>
+            <p class="form-helper">Submitting opens your email client with this message ready to send.</p>
+            <button type="submit" class="btn btn-primary">Send Message</button>
+            <p class="form-status" id="miniFormStatus" aria-live="polite"></p>
+        </form>
+    </div>
+</div>
